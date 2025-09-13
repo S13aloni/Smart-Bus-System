@@ -149,6 +149,11 @@
   background-color: #EF4444;
 }
 
+.bus-marker.delayed {
+  border: 3px solid #F59E0B !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5) !important;
+}
+
 /* Pulse animation for live indicators */
 .pulse-dot {
   animation: pulse 2s infinite;

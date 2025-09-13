@@ -1,6 +1,6 @@
 'use client';
 
-import { Bus, BarChart3, MapPin, Settings } from 'lucide-react';
+import { Bus, BarChart3, MapPin, Settings, TrendingUp, AlertTriangle, Cpu } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -10,7 +10,9 @@ interface HeaderProps {
 const tabs = [
   { id: 'live-tracking', label: 'Live Tracking', icon: MapPin },
   { id: 'demand-prediction', label: 'Demand Prediction', icon: BarChart3 },
-  { id: 'before-after', label: 'Before vs After', icon: Settings },
+  { id: 'before-after', label: 'Schedule Optimization', icon: Settings },
+  { id: 'ridership-analysis', label: 'Ridership Analysis', icon: TrendingUp },
+  { id: 'scheduling-engine', label: 'Scheduling Engine', icon: Cpu },
 ];
 
 export default function Header({ activeTab, onTabChange }: HeaderProps) {
@@ -25,7 +27,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Smart Bus System</h1>
-              <p className="text-sm text-gray-500">Optimization Dashboard</p>
+              <p className="text-sm text-gray-500">AI-Powered Optimization Platform</p>
             </div>
           </div>
 
@@ -62,4 +64,3 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
     </header>
   );
 }
-

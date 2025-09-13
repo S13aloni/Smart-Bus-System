@@ -1,6 +1,6 @@
 'use client';
 
-import { Bus, Route, Users, TrendingUp } from 'lucide-react';
+import { Bus, Route, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface StatsOverviewProps {
   stats: {
@@ -9,9 +9,10 @@ interface StatsOverviewProps {
     totalRoutes: number;
     avgOccupancy: number;
   };
+  alerts: number;
 }
 
-export default function StatsOverview({ stats }: StatsOverviewProps) {
+export default function StatsOverview({ stats, alerts }: StatsOverviewProps) {
   const statCards = [
     {
       title: 'Total Buses',
@@ -45,10 +46,18 @@ export default function StatsOverview({ stats }: StatsOverviewProps) {
       change: '+5%',
       changeType: 'positive' as const,
     },
+    {
+      title: 'Active Alerts',
+      value: alerts,
+      icon: AlertTriangle,
+      color: alerts > 0 ? 'from-red-500 to-red-600' : 'from-gray-500 to-gray-600',
+      change: alerts > 0 ? 'Attention' : 'All Clear',
+      changeType: alerts > 0 ? 'negative' as const : 'neutral' as const,
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       {statCards.map((stat, index) => {
         const Icon = stat.icon;
         return (
@@ -65,9 +74,13 @@ export default function StatsOverview({ stats }: StatsOverviewProps) {
             <div className="mt-4 flex items-center">
               <span className="text-sm text-white opacity-90">
                 {stat.changeType === 'positive' && '+'}
+                {stat.changeType === 'negative' && alerts > 0 && '⚠️ '}
                 {stat.change}
               </span>
-              <span className="text-xs text-white opacity-75 ml-2">vs last hour</span>
+              <span className="text-xs text-white opacity-75 ml-2">
+                {stat.changeType === 'positive' ? 'vs last hour' : 
+                 stat.changeType === 'negative' ? 'needs attention' : 'active'}
+              </span>
             </div>
           </div>
         );
@@ -75,4 +88,3 @@ export default function StatsOverview({ stats }: StatsOverviewProps) {
     </div>
   );
 }
-

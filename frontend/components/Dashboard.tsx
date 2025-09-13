@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import LiveTracking from './LiveTracking';
 import DemandPrediction from './DemandPrediction';
 import BeforeAfterComparison from './BeforeAfterComparison';
+import RidershipComparison from './RidershipComparison';
+import SchedulingEngine from './SchedulingEngine';
+import AlertsPanel from './AlertsPanel';
 import StatsOverview from './StatsOverview';
-import { dataService } from '@/lib/dataService';
+import { enhancedDataService } from '@/lib/enhancedDataService';
 
 interface DashboardProps {
   activeTab: string;
@@ -18,16 +21,22 @@ export default function Dashboard({ activeTab }: DashboardProps) {
     totalRoutes: 0,
     avgOccupancy: 0,
   });
+  const [alerts, setAlerts] = useState(0);
 
   useEffect(() => {
-    // Fetch initial stats from data service
+    // Fetch initial stats from enhanced data service
     fetchStats();
+    
+    // Set up real-time updates
+    const interval = setInterval(fetchStats, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchStats = async () => {
     try {
-      const buses = dataService.getLiveBusData();
-      const routes = dataService.getRoutes();
+      const buses = enhancedDataService.getLiveBusData();
+      const routes = enhancedDataService.getRoutes();
+      const currentAlerts = enhancedDataService.getAlerts();
       
       const activeBuses = buses.filter(bus => bus.status === 'active').length;
       const avgOccupancy = buses.length > 0 
@@ -40,6 +49,8 @@ export default function Dashboard({ activeTab }: DashboardProps) {
         totalRoutes: routes.length,
         avgOccupancy,
       });
+      
+      setAlerts(currentAlerts.length);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -53,6 +64,10 @@ export default function Dashboard({ activeTab }: DashboardProps) {
         return <DemandPrediction />;
       case 'before-after':
         return <BeforeAfterComparison />;
+      case 'ridership-analysis':
+        return <RidershipComparison />;
+      case 'scheduling-engine':
+        return <SchedulingEngine />;
       default:
         return <LiveTracking />;
     }
@@ -61,7 +76,10 @@ export default function Dashboard({ activeTab }: DashboardProps) {
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <StatsOverview stats={stats} />
+      <StatsOverview stats={stats} alerts={alerts} />
+
+      {/* Alerts Panel */}
+      <AlertsPanel />
 
       {/* Tab Content */}
       <div className="enhanced-card">

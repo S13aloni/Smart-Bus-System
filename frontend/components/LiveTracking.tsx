@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { MapPin, Bus, Users, Clock, RefreshCw, Wifi, WifiOff } from 'lucide-react';
-import { dataService, BusData } from '@/lib/dataService';
+import { MapPin, Bus, Users, Clock, RefreshCw, Wifi, WifiOff, Calendar } from 'lucide-react';
+import { enhancedDataService, BusData } from '@/lib/enhancedDataService';
 
 // Dynamically import the map component to avoid SSR issues
 const BusMap = dynamic(() => import('./BusMap'), { 
@@ -41,8 +41,8 @@ export default function LiveTracking() {
 
   const fetchLiveData = async () => {
     try {
-      // Use local data service for realistic simulation
-      const liveData = dataService.getLiveBusData();
+      // Use enhanced data service for realistic simulation
+      const liveData = enhancedDataService.getLiveBusData();
       setBuses(liveData);
       setLastUpdate(new Date());
       setLoading(false);
@@ -79,11 +79,23 @@ export default function LiveTracking() {
     return 'Full';
   };
 
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
+  const getDelayStatus = (delayMinutes: number) => {
+    if (delayMinutes > 10) return { color: 'text-red-600', label: 'Delayed' };
+    if (delayMinutes > 5) return { color: 'text-orange-600', label: 'Slight Delay' };
+    if (delayMinutes < -5) return { color: 'text-green-600', label: 'Early' };
+    return { color: 'text-green-600', label: 'On Time' };
+  };
+
   const activeBuses = buses.filter(bus => bus.status === 'active');
   const totalPassengers = buses.reduce((sum, bus) => sum + bus.occupancy, 0);
   const avgOccupancy = buses.length > 0 
     ? Math.round(buses.reduce((sum, bus) => sum + bus.occupancy_percentage, 0) / buses.length)
     : 0;
+  const delayedBuses = buses.filter(bus => bus.schedule.delay_minutes > 5).length;
 
   if (loading) {
     return (
@@ -105,7 +117,7 @@ export default function LiveTracking() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Live Bus Tracking</h2>
-          <p className="text-gray-600">Real-time bus locations and occupancy monitoring</p>
+          <p className="text-gray-600">Real-time bus locations, occupancy, and schedule updates</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="live-data-indicator">
@@ -133,8 +145,8 @@ export default function LiveTracking() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {/* Enhanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="enhanced-card">
           <div className="flex items-center justify-between">
             <div>
@@ -174,6 +186,18 @@ export default function LiveTracking() {
         <div className="enhanced-card">
           <div className="flex items-center justify-between">
             <div>
+              <p className="text-sm font-medium text-gray-600">Delayed Buses</p>
+              <p className="text-2xl font-bold text-gray-900">{delayedBuses}</p>
+            </div>
+            <div className="p-3 bg-red-100 rounded-lg">
+              <Calendar className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="enhanced-card">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-600">Last Update</p>
               <p className="text-sm font-bold text-gray-900">
                 {lastUpdate.toLocaleTimeString()}
@@ -200,7 +224,7 @@ export default function LiveTracking() {
           </div>
         </div>
 
-        {/* Bus List */}
+        {/* Enhanced Bus List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Active Buses</h3>
@@ -208,66 +232,74 @@ export default function LiveTracking() {
           </div>
           
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {buses.map((bus) => (
-              <div
-                key={bus.bus_id}
-                className={`bus-list-item ${
-                  selectedBus?.bus_id === bus.bus_id ? 'selected' : ''
-                }`}
-                onClick={() => setSelectedBus(bus)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${getOccupancyColor(bus.occupancy_percentage)}`}></div>
-                    <span className="font-medium text-gray-900">{bus.license_plate}</span>
-                  </div>
-                  <span className={`status-badge ${getStatusColor(bus.status)}`}>
-                    {bus.status}
-                  </span>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <MapPin className="h-3 w-3" />
-                    <span className="truncate">{bus.route.source} → {bus.route.destination}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
+            {buses.map((bus) => {
+              const delayStatus = getDelayStatus(bus.schedule.delay_minutes);
+              return (
+                <div
+                  key={bus.bus_id}
+                  className={`bus-list-item ${
+                    selectedBus?.bus_id === bus.bus_id ? 'selected' : ''
+                  }`}
+                  onClick={() => setSelectedBus(bus)}
+                >
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <Users className="h-3 w-3 text-gray-600" />
-                      <span className="text-sm text-gray-600">
-                        {bus.occupancy}/{bus.capacity}
-                      </span>
+                      <div className={`w-3 h-3 rounded-full ${getOccupancyColor(bus.occupancy_percentage)}`}></div>
+                      <span className="font-medium text-gray-900">{bus.license_plate}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-900">
-                        {bus.occupancy_percentage}%
+                      <span className={`status-badge ${getStatusColor(bus.status)}`}>
+                        {bus.status}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        {getOccupancyLabel(bus.occupancy_percentage)}
+                      <span className={`text-xs font-medium ${delayStatus.color}`}>
+                        {delayStatus.label}
                       </span>
                     </div>
                   </div>
                   
-                  <div className="occupancy-bar">
-                    <div
-                      className={`occupancy-fill ${getOccupancyColor(bus.occupancy_percentage)}`}
-                      style={{ width: `${bus.occupancy_percentage}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Speed: {Math.round(bus.current_position.speed)} km/h</span>
-                    <span>Route {bus.route_id}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate">{bus.route.source} → {bus.route.destination}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Users className="h-3 w-3 text-gray-600" />
+                        <span className="text-sm text-gray-600">
+                          {bus.occupancy}/{bus.capacity}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {bus.occupancy_percentage}%
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {getOccupancyLabel(bus.occupancy_percentage)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="occupancy-bar">
+                      <div
+                        className={`occupancy-fill ${getOccupancyColor(bus.occupancy_percentage)}`}
+                        style={{ width: `${bus.occupancy_percentage}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Speed: {Math.round(bus.current_position.speed)} km/h</span>
+                      <span>Delay: {bus.schedule.delay_minutes > 0 ? '+' : ''}{bus.schedule.delay_minutes}m</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Selected Bus Details */}
+      {/* Enhanced Selected Bus Details */}
       {selectedBus && (
         <div className="mt-6">
           <div className="enhanced-card">
@@ -280,7 +312,7 @@ export default function LiveTracking() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <h4 className="font-medium text-gray-700 mb-3">Route Information</h4>
                 <div className="space-y-2">
@@ -340,7 +372,31 @@ export default function LiveTracking() {
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Last Update:</span>
                     <span className="text-sm font-medium">
-                      {new Date(selectedBus.current_position.timestamp).toLocaleTimeString()}
+                      {formatTime(selectedBus.current_position.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-gray-700 mb-3">Schedule Status</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Planned Departure:</span>
+                    <span className="text-sm font-medium">
+                      {formatTime(selectedBus.schedule.planned_departure)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Planned Arrival:</span>
+                    <span className="text-sm font-medium">
+                      {formatTime(selectedBus.schedule.planned_arrival)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Delay:</span>
+                    <span className={`text-sm font-medium ${getDelayStatus(selectedBus.schedule.delay_minutes).color}`}>
+                      {selectedBus.schedule.delay_minutes > 0 ? '+' : ''}{selectedBus.schedule.delay_minutes} min
                     </span>
                   </div>
                 </div>
