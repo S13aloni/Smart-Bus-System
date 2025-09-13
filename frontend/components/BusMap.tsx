@@ -5,6 +5,10 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Bus, Users, Clock, Navigation, Calendar, AlertTriangle } from 'lucide-react';
 import { BusData } from '@/lib/enhancedDataService';
+import { enhancedDataService } from '@/lib/enhancedDataService';
+import { Polyline } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -43,6 +47,20 @@ interface BusMapProps {
   onBusSelect: (bus: BusData) => void;
 }
 
+interface RouteData {
+  route_id: number;
+  source: string;
+  destination: string;
+  stops: string[];
+  distance: number;
+  color: string;
+  stops_coordinates: Array<{
+    lat: number;
+    lng: number;
+    name: string;
+  }>;
+}
+
 function MapController({ selectedBus, buses }: { selectedBus: BusData | null; buses: BusData[] }) {
   const map = useMap();
 
@@ -54,7 +72,7 @@ function MapController({ selectedBus, buses }: { selectedBus: BusData | null; bu
       );
     } else if (buses.length > 0) {
       // Fit map to show all buses
-      const group = new L.featureGroup();
+      const group = L.featureGroup();
       buses.forEach(bus => {
         const marker = L.marker([bus.current_position.latitude, bus.current_position.longitude]);
         group.addLayer(marker);
@@ -69,13 +87,20 @@ function MapController({ selectedBus, buses }: { selectedBus: BusData | null; bu
 }
 
 export default function BusMap({ buses, selectedBus, onBusSelect }: BusMapProps) {
-  const [mapCenter] = useState([40.7128, -74.0060]); // NYC coordinates
+  const [mapCenter] = useState<[number, number]>([40.7128, -74.0060]); // NYC coordinates
   const [isMapReady, setIsMapReady] = useState(false);
+  const [routes, setRoutes] = useState<RouteData[]>([]);
 
   useEffect(() => {
     // Ensure map is ready
     const timer = setTimeout(() => setIsMapReady(true), 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Load routes data
+    const routesData = enhancedDataService.getRoutes();
+    setRoutes(routesData);
   }, []);
 
   const formatTime = (timestamp: string) => {
@@ -121,6 +146,48 @@ export default function BusMap({ buses, selectedBus, onBusSelect }: BusMapProps)
         />
         
         <MapController selectedBus={selectedBus} buses={buses} />
+        
+        {/* Route Paths */}
+        {routes.map((route) => (
+          <Polyline
+            key={`route-${route.route_id}`}
+            positions={route.stops_coordinates.map(coord => [coord.lat, coord.lng])}
+            pathOptions={{
+              color: route.color,
+              weight: 4,
+              opacity: 0.7,
+              dashArray: '10, 10'
+            }}
+          />
+        ))}
+        
+        {/* Route Stop Markers */}
+        {routes.map((route) => 
+          route.stops_coordinates.map((stop, index) => (
+            <Marker
+              key={`stop-${route.route_id}-${index}`}
+              position={[stop.lat, stop.lng]}
+              icon={L.divIcon({
+                className: 'route-stop-marker',
+                html: `
+                  <div class="route-stop-icon" style="background-color: ${route.color}">
+                    <span>${index + 1}</span>
+                  </div>
+                `,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12],
+              })}
+            >
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-bold text-gray-900">{stop.name}</h3>
+                  <p className="text-sm text-gray-600">Route {route.route_id}</p>
+                  <p className="text-xs text-gray-500">Stop {index + 1} of {route.stops_coordinates.length}</p>
+                </div>
+              </Popup>
+            </Marker>
+          ))
+        )}
         
         {buses.map((bus) => {
           const isDelayed = bus.schedule.delay_minutes > 5;
@@ -265,7 +332,7 @@ export default function BusMap({ buses, selectedBus, onBusSelect }: BusMapProps)
       <div className="map-controls">
         <div className="space-y-2">
           <div className="bg-white rounded-lg shadow-sm p-2">
-            <h4 className="text-xs font-medium text-gray-700 mb-2">Legend</h4>
+            <h4 className="text-xs font-medium text-gray-700 mb-2">Bus Occupancy</h4>
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -287,6 +354,23 @@ export default function BusMap({ buses, selectedBus, onBusSelect }: BusMapProps)
                 <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-yellow-400"></div>
                 <span className="text-xs text-gray-600">Delayed</span>
               </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-2">
+            <h4 className="text-xs font-medium text-gray-700 mb-2">Routes</h4>
+            <div className="space-y-1">
+              {routes.map((route) => (
+                <div key={route.route_id} className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: route.color }}
+                  ></div>
+                  <span className="text-xs text-gray-600">
+                    Route {route.route_id}: {route.source} → {route.destination}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

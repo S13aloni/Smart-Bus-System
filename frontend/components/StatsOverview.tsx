@@ -6,8 +6,10 @@ interface StatsOverviewProps {
   stats: {
     totalBuses: number;
     activeBuses: number;
+    operationalBuses: number;
     totalRoutes: number;
     avgOccupancy: number;
+    breakdowns: number;
   };
   alerts: number;
 }
@@ -19,23 +21,23 @@ export default function StatsOverview({ stats, alerts }: StatsOverviewProps) {
       value: stats.totalBuses,
       icon: Bus,
       color: 'from-blue-500 to-blue-600',
-      change: '+2',
-      changeType: 'positive' as const,
-    },
-    {
-      title: 'Active Buses',
-      value: stats.activeBuses,
-      icon: Bus,
-      color: 'from-green-500 to-green-600',
-      change: `${Math.round((stats.activeBuses / stats.totalBuses) * 100)}%`,
+      change: 'Ahmedabad Fleet',
       changeType: 'neutral' as const,
     },
     {
-      title: 'Routes',
+      title: 'Operational Buses',
+      value: stats.operationalBuses,
+      icon: Bus,
+      color: 'from-green-500 to-green-600',
+      change: `${Math.round((stats.operationalBuses / stats.totalBuses) * 100)}%`,
+      changeType: 'positive' as const,
+    },
+    {
+      title: 'Ahmedabad Routes',
       value: stats.totalRoutes,
       icon: Route,
       color: 'from-purple-500 to-purple-600',
-      change: '5',
+      change: '8 Active',
       changeType: 'neutral' as const,
     },
     {
@@ -43,21 +45,29 @@ export default function StatsOverview({ stats, alerts }: StatsOverviewProps) {
       value: `${stats.avgOccupancy}%`,
       icon: Users,
       color: 'from-orange-500 to-orange-600',
-      change: '+5%',
+      change: 'Peak Hours',
       changeType: 'positive' as const,
+    },
+    {
+      title: 'Breakdowns',
+      value: stats.breakdowns,
+      icon: AlertTriangle,
+      color: stats.breakdowns > 0 ? 'from-red-500 to-red-600' : 'from-gray-500 to-gray-600',
+      change: stats.breakdowns > 0 ? 'Needs Repair' : 'All Good',
+      changeType: stats.breakdowns > 0 ? 'negative' as const : 'neutral' as const,
     },
     {
       title: 'Active Alerts',
       value: alerts,
       icon: AlertTriangle,
-      color: alerts > 0 ? 'from-red-500 to-red-600' : 'from-gray-500 to-gray-600',
-      change: alerts > 0 ? 'Attention' : 'All Clear',
+      color: alerts > 0 ? 'from-yellow-500 to-yellow-600' : 'from-gray-500 to-gray-600',
+      change: alerts > 0 ? 'Weather/Traffic' : 'All Clear',
       changeType: alerts > 0 ? 'negative' as const : 'neutral' as const,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
       {statCards.map((stat, index) => {
         const Icon = stat.icon;
         return (

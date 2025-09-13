@@ -10,7 +10,7 @@ export interface BusData {
     distance: number;
   };
   capacity: number;
-  status: string;
+  status: 'on_time' | 'delayed' | 'cancelled' | 'breakdown' | 'maintenance';
   current_position: {
     latitude: number;
     longitude: number;
@@ -27,6 +27,13 @@ export interface BusData {
     actual_arrival?: string;
     delay_minutes: number;
   };
+  weather_impact: 'normal' | 'rain' | 'heavy_rain' | 'fog' | 'storm';
+  traffic_condition: 'normal' | 'heavy' | 'jam' | 'clear';
+  breakdown_reason?: string;
+  is_operational: boolean;
+  last_stop: string;
+  next_stop: string;
+  estimated_arrival: string;
 }
 
 export interface TicketSale {
@@ -53,7 +60,7 @@ export interface GPSLog {
 
 export interface Alert {
   id: string;
-  type: 'delay' | 'cancellation' | 'reschedule' | 'congestion' | 'maintenance';
+  type: 'delay' | 'cancellation' | 'reschedule' | 'congestion' | 'maintenance' | 'breakdown' | 'weather' | 'traffic';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   message: string;
@@ -61,6 +68,9 @@ export interface Alert {
   bus_id?: number;
   timestamp: string;
   resolved: boolean;
+  weather_condition?: string;
+  breakdown_reason?: string;
+  affected_stops?: string[];
 }
 
 export interface PredictionData {
@@ -78,75 +88,166 @@ export interface PredictionData {
   };
 }
 
-// Enhanced route data with more realistic paths
+// Real Ahmedabad City Bus Routes with actual locations
 const routes = [
   {
     route_id: 1,
-    source: "Downtown Station",
-    destination: "Airport Terminal",
-    stops: ["Central Plaza", "University Campus", "Shopping Mall", "Airport Terminal"],
-    distance: 25.5,
+    source: "Ahmedabad Railway Station",
+    destination: "Sardar Vallabhbhai Patel International Airport",
+    stops: ["Gandhi Ashram", "Sabarmati Riverfront", "Science City", "Vastrapur Lake", "Iskon Temple", "Airport"],
+    distance: 25.3,
+    color: "#3B82F6",
+    frequency_minutes: 15,
+    peak_hours: ["07:00-09:00", "17:00-19:00"],
+    off_peak_hours: ["10:00-16:00", "20:00-22:00"],
     stops_coordinates: [
-      { lat: 40.7128, lng: -74.0060, name: "Downtown Station" },
-      { lat: 40.7589, lng: -73.9851, name: "Central Plaza" },
-      { lat: 40.7505, lng: -73.9934, name: "University Campus" },
-      { lat: 40.7614, lng: -73.9776, name: "Shopping Mall" },
-      { lat: 40.6413, lng: -73.7781, name: "Airport Terminal" }
+      { lat: 23.0225, lng: 72.5714, name: "Ahmedabad Railway Station", type: "major" },
+      { lat: 23.0300, lng: 72.5800, name: "Gandhi Ashram", type: "intermediate" },
+      { lat: 23.0350, lng: 72.5850, name: "Sabarmati Riverfront", type: "intermediate" },
+      { lat: 23.0400, lng: 72.5900, name: "Science City", type: "intermediate" },
+      { lat: 23.0450, lng: 72.5950, name: "Vastrapur Lake", type: "intermediate" },
+      { lat: 23.0500, lng: 72.6000, name: "Iskon Temple", type: "intermediate" },
+      { lat: 23.0550, lng: 72.6050, name: "Airport", type: "major" }
     ]
   },
   {
     route_id: 2,
-    source: "University Campus",
-    destination: "Shopping District",
-    stops: ["Student Center", "Library", "Shopping Mall", "Entertainment Center"],
-    distance: 12.3,
+    source: "Maninagar",
+    destination: "Bodakdev",
+    stops: ["Lal Darwaja", "Bhadra Fort", "Law Garden", "Navrangpura", "Vastrapur", "Bodakdev"],
+    distance: 18.7,
+    color: "#10B981",
+    frequency_minutes: 12,
+    peak_hours: ["08:00-10:00", "18:00-20:00"],
+    off_peak_hours: ["11:00-17:00", "21:00-23:00"],
     stops_coordinates: [
-      { lat: 40.7505, lng: -73.9934, name: "University Campus" },
-      { lat: 40.7489, lng: -73.9857, name: "Student Center" },
-      { lat: 40.7502, lng: -73.9876, name: "Library" },
-      { lat: 40.7614, lng: -73.9776, name: "Shopping Mall" },
-      { lat: 40.7630, lng: -73.9780, name: "Entertainment Center" }
+      { lat: 23.0000, lng: 72.6000, name: "Maninagar", type: "major" },
+      { lat: 23.0050, lng: 72.6050, name: "Lal Darwaja", type: "intermediate" },
+      { lat: 23.0100, lng: 72.6100, name: "Bhadra Fort", type: "intermediate" },
+      { lat: 23.0150, lng: 72.6150, name: "Law Garden", type: "intermediate" },
+      { lat: 23.0200, lng: 72.6200, name: "Navrangpura", type: "intermediate" },
+      { lat: 23.0250, lng: 72.6250, name: "Vastrapur", type: "intermediate" },
+      { lat: 23.0300, lng: 72.6300, name: "Bodakdev", type: "major" }
     ]
   },
   {
     route_id: 3,
-    source: "Residential Area",
-    destination: "Business District",
-    stops: ["Housing Complex", "School", "Hospital", "Business Center"],
-    distance: 18.7,
+    source: "Gandhinagar",
+    destination: "Ahmedabad City",
+    stops: ["Sector 21", "Akshardham Temple", "Gandhinagar Bus Stand", "Sarkhej", "Juhapura", "Ahmedabad City"],
+    distance: 22.1,
+    color: "#F59E0B",
+    frequency_minutes: 20,
+    peak_hours: ["07:30-09:30", "17:30-19:30"],
+    off_peak_hours: ["10:30-16:30", "20:30-22:30"],
     stops_coordinates: [
-      { lat: 40.6782, lng: -73.9442, name: "Residential Area" },
-      { lat: 40.6800, lng: -73.9400, name: "Housing Complex" },
-      { lat: 40.6820, lng: -73.9380, name: "School" },
-      { lat: 40.6850, lng: -73.9350, name: "Hospital" },
-      { lat: 40.6890, lng: -73.9300, name: "Business Center" }
+      { lat: 23.2150, lng: 72.6500, name: "Gandhinagar", type: "major" },
+      { lat: 23.2100, lng: 72.6450, name: "Sector 21", type: "intermediate" },
+      { lat: 23.2050, lng: 72.6400, name: "Akshardham Temple", type: "intermediate" },
+      { lat: 23.2000, lng: 72.6350, name: "Gandhinagar Bus Stand", type: "intermediate" },
+      { lat: 23.1950, lng: 72.6300, name: "Sarkhej", type: "intermediate" },
+      { lat: 23.1900, lng: 72.6250, name: "Juhapura", type: "intermediate" },
+      { lat: 23.1850, lng: 72.6200, name: "Ahmedabad City", type: "major" }
     ]
   },
   {
     route_id: 4,
-    source: "Airport Terminal",
-    destination: "Hotel District",
-    stops: ["Airport Terminal", "Convention Center", "Hotel Plaza", "Tourist Center"],
-    distance: 8.9,
+    source: "Sabarmati",
+    destination: "Naroda",
+    stops: ["Sabarmati Ashram", "Sabarmati Riverfront", "Ellisbridge", "C.G. Road", "Naroda Industrial Area", "Naroda"],
+    distance: 16.8,
+    color: "#EF4444",
+    frequency_minutes: 18,
+    peak_hours: ["08:30-10:30", "18:30-20:30"],
+    off_peak_hours: ["11:30-17:30", "21:30-23:30"],
     stops_coordinates: [
-      { lat: 40.6413, lng: -73.7781, name: "Airport Terminal" },
-      { lat: 40.6500, lng: -73.7800, name: "Convention Center" },
-      { lat: 40.6600, lng: -73.7900, name: "Hotel Plaza" },
-      { lat: 40.6700, lng: -73.8000, name: "Tourist Center" }
+      { lat: 23.0400, lng: 72.5800, name: "Sabarmati", type: "major" },
+      { lat: 23.0350, lng: 72.5850, name: "Sabarmati Ashram", type: "intermediate" },
+      { lat: 23.0300, lng: 72.5900, name: "Sabarmati Riverfront", type: "intermediate" },
+      { lat: 23.0250, lng: 72.5950, name: "Ellisbridge", type: "intermediate" },
+      { lat: 23.0200, lng: 72.6000, name: "C.G. Road", type: "intermediate" },
+      { lat: 23.0150, lng: 72.6050, name: "Naroda Industrial Area", type: "intermediate" },
+      { lat: 23.0100, lng: 72.6100, name: "Naroda", type: "major" }
     ]
   },
   {
     route_id: 5,
-    source: "Suburb Station",
-    destination: "City Center",
-    stops: ["Suburb Mall", "Park", "City Hall", "Central Plaza"],
-    distance: 22.1,
+    source: "Thaltej",
+    destination: "Chandkheda",
+    stops: ["Thaltej Gam", "Thaltej Lake", "Bodakdev", "Vastrapur", "Gandhinagar Highway", "Chandkheda"],
+    distance: 19.5,
+    color: "#8B5CF6",
+    frequency_minutes: 14,
+    peak_hours: ["09:00-11:00", "19:00-21:00"],
+    off_peak_hours: ["12:00-18:00", "22:00-24:00"],
     stops_coordinates: [
-      { lat: 40.6000, lng: -73.9000, name: "Suburb Station" },
-      { lat: 40.6200, lng: -73.9500, name: "Suburb Mall" },
-      { lat: 40.6500, lng: -73.9800, name: "Park" },
-      { lat: 40.6800, lng: -74.0000, name: "City Hall" },
-      { lat: 40.7128, lng: -74.0060, name: "Central Plaza" }
+      { lat: 23.0500, lng: 72.5500, name: "Thaltej", type: "major" },
+      { lat: 23.0450, lng: 72.5550, name: "Thaltej Gam", type: "intermediate" },
+      { lat: 23.0400, lng: 72.5600, name: "Thaltej Lake", type: "intermediate" },
+      { lat: 23.0350, lng: 72.5650, name: "Bodakdev", type: "intermediate" },
+      { lat: 23.0300, lng: 72.5700, name: "Vastrapur", type: "intermediate" },
+      { lat: 23.0250, lng: 72.5750, name: "Gandhinagar Highway", type: "intermediate" },
+      { lat: 23.0200, lng: 72.5800, name: "Chandkheda", type: "major" }
+    ]
+  },
+  {
+    route_id: 6,
+    source: "Kalupur",
+    destination: "Vastrapur",
+    stops: ["Kalupur Market", "Dhalgarwad", "Kankaria Lake", "Lal Darwaja", "Ellisbridge", "Vastrapur"],
+    distance: 14.2,
+    color: "#06B6D4",
+    frequency_minutes: 10,
+    peak_hours: ["07:30-09:30", "18:00-20:00"],
+    off_peak_hours: ["10:00-17:00", "20:30-23:00"],
+    stops_coordinates: [
+      { lat: 23.0250, lng: 72.5900, name: "Kalupur", type: "major" },
+      { lat: 23.0270, lng: 72.5920, name: "Kalupur Market", type: "intermediate" },
+      { lat: 23.0290, lng: 72.5940, name: "Dhalgarwad", type: "intermediate" },
+      { lat: 23.0310, lng: 72.5960, name: "Kankaria Lake", type: "intermediate" },
+      { lat: 23.0330, lng: 72.5980, name: "Lal Darwaja", type: "intermediate" },
+      { lat: 23.0350, lng: 72.6000, name: "Ellisbridge", type: "intermediate" },
+      { lat: 23.0370, lng: 72.6020, name: "Vastrapur", type: "major" }
+    ]
+  },
+  {
+    route_id: 7,
+    source: "Bapunagar",
+    destination: "Paldi",
+    stops: ["Bapunagar Market", "Naroda Road", "Shahpur", "Raipur Darwaja", "Paldi Gam", "Paldi"],
+    distance: 11.8,
+    color: "#84CC16",
+    frequency_minutes: 16,
+    peak_hours: ["08:00-10:00", "19:00-21:00"],
+    off_peak_hours: ["11:00-18:00", "21:30-23:30"],
+    stops_coordinates: [
+      { lat: 23.0150, lng: 72.6200, name: "Bapunagar", type: "major" },
+      { lat: 23.0120, lng: 72.6180, name: "Bapunagar Market", type: "intermediate" },
+      { lat: 23.0090, lng: 72.6160, name: "Naroda Road", type: "intermediate" },
+      { lat: 23.0060, lng: 72.6140, name: "Shahpur", type: "intermediate" },
+      { lat: 23.0030, lng: 72.6120, name: "Raipur Darwaja", type: "intermediate" },
+      { lat: 23.0000, lng: 72.6100, name: "Paldi Gam", type: "intermediate" },
+      { lat: 22.9970, lng: 72.6080, name: "Paldi", type: "major" }
+    ]
+  },
+  {
+    route_id: 8,
+    source: "Naranpura",
+    destination: "Satellite",
+    stops: ["Naranpura Gam", "Gujarat University", "Navrangpura", "Ellisbridge", "Satellite Circle", "Satellite"],
+    distance: 13.5,
+    color: "#F97316",
+    frequency_minutes: 13,
+    peak_hours: ["07:45-09:45", "17:45-19:45"],
+    off_peak_hours: ["10:15-16:45", "20:15-22:45"],
+    stops_coordinates: [
+      { lat: 23.0400, lng: 72.6100, name: "Naranpura", type: "major" },
+      { lat: 23.0380, lng: 72.6120, name: "Naranpura Gam", type: "intermediate" },
+      { lat: 23.0360, lng: 72.6140, name: "Gujarat University", type: "intermediate" },
+      { lat: 23.0340, lng: 72.6160, name: "Navrangpura", type: "intermediate" },
+      { lat: 23.0320, lng: 72.6180, name: "Ellisbridge", type: "intermediate" },
+      { lat: 23.0300, lng: 72.6200, name: "Satellite Circle", type: "intermediate" },
+      { lat: 23.0280, lng: 72.6220, name: "Satellite", type: "major" }
     ]
   }
 ];
@@ -191,13 +292,16 @@ class EnhancedDataService {
       const plannedDeparture = new Date(now.getTime() + Math.random() * 3600000); // Within next hour
       const plannedArrival = new Date(plannedDeparture.getTime() + route.distance * 60000); // Based on distance
       
+      const currentStopIndex = Math.floor(this.routeProgress[config.id]);
+      const nextStopIndex = (currentStopIndex + 1) % route.stops_coordinates.length;
+      
       return {
         bus_id: config.id,
         license_plate: config.plate,
         route_id: config.routeId,
         route: route,
         capacity: config.capacity,
-        status: 'active',
+        status: 'on_time',
         current_position: {
           latitude: startPoint.lat + (Math.random() - 0.5) * 0.01,
           longitude: startPoint.lng + (Math.random() - 0.5) * 0.01,
@@ -211,7 +315,13 @@ class EnhancedDataService {
           planned_departure: plannedDeparture.toISOString(),
           planned_arrival: plannedArrival.toISOString(),
           delay_minutes: Math.floor(Math.random() * 10) - 5 // -5 to +5 minutes
-        }
+        },
+        weather_impact: 'normal',
+        traffic_condition: 'normal',
+        is_operational: true,
+        last_stop: route.stops_coordinates[currentStopIndex]?.name || route.stops_coordinates[0].name,
+        next_stop: route.stops_coordinates[nextStopIndex]?.name || route.stops_coordinates[0].name,
+        estimated_arrival: new Date(plannedArrival.getTime() + Math.floor(Math.random() * 10) * 60000).toISOString()
       };
     });
 
@@ -271,10 +381,13 @@ class EnhancedDataService {
 
   private updateBusPositions() {
     this.buses.forEach(bus => {
+      // Skip if bus is not operational (breakdown, maintenance)
+      if (!bus.is_operational) return;
+      
       const route = routes.find(r => r.route_id === bus.route_id)!;
       if (!route) return;
 
-      // Update progress along route
+      // Update progress along route with more realistic movement
       const speed = bus.current_position.speed / 3600; // km/s
       const progressIncrement = (speed * 5) / 50; // 5 seconds * speed
       this.routeProgress[bus.bus_id] = (this.routeProgress[bus.bus_id] + progressIncrement) % route.stops_coordinates.length;
@@ -286,15 +399,89 @@ class EnhancedDataService {
       // Calculate direction
       const direction = this.calculateDirection(oldPos, newPos);
 
+      // Add realistic speed variation based on route segment and conditions
+      const currentStopIndex = Math.floor(this.routeProgress[bus.bus_id]);
+      const segmentProgress = this.routeProgress[bus.bus_id] - currentStopIndex;
+      const speedVariation = Math.sin(segmentProgress * Math.PI) * 10; // Speed up/slow down at stops
+      let baseSpeed = 25 + Math.random() * 15; // 25-40 km/h base speed
+      
+      // Adjust speed based on weather and traffic conditions
+      if (bus.weather_impact === 'heavy_rain' || bus.weather_impact === 'storm') {
+        baseSpeed *= 0.6; // 40% speed reduction
+      } else if (bus.weather_impact === 'rain' || bus.weather_impact === 'fog') {
+        baseSpeed *= 0.8; // 20% speed reduction
+      }
+      
+      if (bus.traffic_condition === 'jam') {
+        baseSpeed *= 0.3; // 70% speed reduction
+      } else if (bus.traffic_condition === 'heavy') {
+        baseSpeed *= 0.7; // 30% speed reduction
+      }
+
       // Update bus position
       bus.current_position = {
         latitude: newPos.lat,
         longitude: newPos.lng,
-        speed: 20 + Math.random() * 30, // 20-50 km/h
+        speed: Math.max(2, baseSpeed + speedVariation), // Minimum 2 km/h
         direction: direction,
         timestamp: new Date().toISOString()
       };
+
+      // Update stop information
+      const nextStopIndex = (currentStopIndex + 1) % route.stops_coordinates.length;
+      bus.last_stop = route.stops_coordinates[currentStopIndex]?.name || route.stops_coordinates[0].name;
+      bus.next_stop = route.stops_coordinates[nextStopIndex]?.name || route.stops_coordinates[0].name;
+      
+      // Update estimated arrival based on current conditions
+      const estimatedTime = new Date();
+      estimatedTime.setMinutes(estimatedTime.getMinutes() + Math.floor(Math.random() * 10) + 5);
+      bus.estimated_arrival = estimatedTime.toISOString();
+
+      // Update occupancy based on stops
+      this.updateBusOccupancy(bus, currentStopIndex, segmentProgress);
     });
+  }
+
+  private updateBusOccupancy(bus: BusData, currentStopIndex: number, segmentProgress: number) {
+    const route = routes.find(r => r.route_id === bus.route_id);
+    if (!route) return;
+
+    // Simulate passengers boarding/alighting at stops
+    if (segmentProgress < 0.1) { // At the beginning of a stop
+      const stopName = route.stops_coordinates[currentStopIndex].name;
+      
+      // Boarding passengers (more likely at popular stops)
+      const boardingProbability = this.getBoardingProbability(stopName, currentStopIndex);
+      if (Math.random() < boardingProbability) {
+        const boardingCount = Math.floor(Math.random() * 8) + 1; // 1-8 passengers
+        bus.occupancy = Math.min(bus.capacity, bus.occupancy + boardingCount);
+      }
+      
+      // Alighting passengers (more likely at destination stops)
+      const alightingProbability = this.getAlightingProbability(stopName, currentStopIndex);
+      if (Math.random() < alightingProbability) {
+        const alightingCount = Math.floor(Math.random() * 6) + 1; // 1-6 passengers
+        bus.occupancy = Math.max(0, bus.occupancy - alightingCount);
+      }
+      
+      this.updateOccupancyPercentages();
+    }
+  }
+
+  private getBoardingProbability(stopName: string, stopIndex: number): number {
+    // Higher probability at major stops
+    const majorStops = ['Downtown Station', 'University Campus', 'Shopping Mall', 'Airport Terminal'];
+    if (majorStops.includes(stopName)) return 0.7;
+    if (stopIndex === 0) return 0.8; // First stop
+    return 0.3; // Regular stops
+  }
+
+  private getAlightingProbability(stopName: string, stopIndex: number): number {
+    // Higher probability at destination stops
+    const destinationStops = ['Airport Terminal', 'Shopping Mall', 'University Campus', 'Business Center'];
+    if (destinationStops.includes(stopName)) return 0.6;
+    if (stopIndex === 0) return 0.1; // First stop
+    return 0.4; // Regular stops
   }
 
   private updatePassengerCounts() {
@@ -369,7 +556,16 @@ class EnhancedDataService {
   }
 
   private generateAlerts() {
-    // Generate alerts based on delays and issues
+    // Generate weather alerts
+    this.generateWeatherAlerts();
+    
+    // Generate breakdown alerts
+    this.generateBreakdownAlerts();
+    
+    // Generate traffic alerts
+    this.generateTrafficAlerts();
+    
+    // Generate delay alerts
     this.buses.forEach(bus => {
       if (bus.schedule.delay_minutes > 5 && Math.random() < 0.3) {
         const alertId = `delay_${bus.bus_id}_${Date.now()}`;
@@ -397,6 +593,110 @@ class EnhancedDataService {
       const isOld = Date.now() - alertTime.getTime() > 300000; // 5 minutes
       return !isOld || !alert.resolved;
     });
+  }
+
+  private generateWeatherAlerts() {
+    // Simulate weather conditions affecting buses
+    const weatherConditions = ['rain', 'heavy_rain', 'fog', 'storm'];
+    const currentWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+    
+    if (currentWeather !== 'normal' && Math.random() < 0.1) { // 10% chance
+      const affectedBuses = this.buses.filter(bus => Math.random() < 0.3); // 30% of buses affected
+      
+      affectedBuses.forEach(bus => {
+        bus.weather_impact = currentWeather as any;
+        bus.schedule.delay_minutes += Math.floor(Math.random() * 15) + 5; // 5-20 minutes delay
+        
+        const alertId = `weather_${bus.bus_id}_${Date.now()}`;
+        if (!this.alerts.find(a => a.id === alertId)) {
+          this.alerts.push({
+            id: alertId,
+            type: 'weather',
+            severity: currentWeather === 'storm' ? 'critical' : 'high',
+            title: `Weather Alert - Route ${bus.route_id}`,
+            message: `Heavy ${currentWeather} affecting Route ${bus.route_id}. Expect delays of ${bus.schedule.delay_minutes} minutes.`,
+            route_id: bus.route_id,
+            bus_id: bus.bus_id,
+            timestamp: new Date().toISOString(),
+            resolved: false,
+            weather_condition: currentWeather,
+            affected_stops: bus.route.stops
+          });
+        }
+      });
+    }
+  }
+
+  private generateBreakdownAlerts() {
+    // Simulate bus breakdowns
+    if (Math.random() < 0.05) { // 5% chance per update cycle
+      const bus = this.buses[Math.floor(Math.random() * this.buses.length)];
+      const breakdownReasons = [
+        'Engine failure',
+        'Brake system issue',
+        'Tire puncture',
+        'Electrical problem',
+        'Fuel system malfunction'
+      ];
+      
+      const reason = breakdownReasons[Math.floor(Math.random() * breakdownReasons.length)];
+      bus.status = 'breakdown';
+      bus.is_operational = false;
+      bus.breakdown_reason = reason;
+      bus.schedule.delay_minutes = 999; // Indefinite delay
+      
+      const alertId = `breakdown_${bus.bus_id}_${Date.now()}`;
+      if (!this.alerts.find(a => a.id === alertId)) {
+        this.alerts.push({
+          id: alertId,
+          type: 'breakdown',
+          severity: 'critical',
+          title: `Bus Breakdown - Route ${bus.route_id}`,
+          message: `Bus ${bus.license_plate} has broken down due to ${reason}. Route ${bus.route_id} is cancelled until replacement bus arrives.`,
+          route_id: bus.route_id,
+          bus_id: bus.bus_id,
+          timestamp: new Date().toISOString(),
+          resolved: false,
+          breakdown_reason: reason,
+          affected_stops: bus.route.stops
+        });
+      }
+    }
+  }
+
+  private generateTrafficAlerts() {
+    // Simulate traffic conditions
+    const trafficConditions = ['heavy', 'jam', 'clear'];
+    const currentTraffic = trafficConditions[Math.floor(Math.random() * trafficConditions.length)];
+    
+    if (currentTraffic !== 'normal' && Math.random() < 0.15) { // 15% chance
+      const affectedBuses = this.buses.filter(bus => Math.random() < 0.4); // 40% of buses affected
+      
+      affectedBuses.forEach(bus => {
+        bus.traffic_condition = currentTraffic as any;
+        if (currentTraffic === 'jam') {
+          bus.schedule.delay_minutes += Math.floor(Math.random() * 20) + 10; // 10-30 minutes delay
+        } else if (currentTraffic === 'heavy') {
+          bus.schedule.delay_minutes += Math.floor(Math.random() * 10) + 5; // 5-15 minutes delay
+        }
+        
+        const alertId = `traffic_${bus.bus_id}_${Date.now()}`;
+        if (!this.alerts.find(a => a.id === alertId)) {
+          this.alerts.push({
+            id: alertId,
+            type: 'traffic',
+            severity: currentTraffic === 'jam' ? 'high' : 'medium',
+            title: `Traffic Alert - Route ${bus.route_id}`,
+            message: `${currentTraffic.charAt(0).toUpperCase() + currentTraffic.slice(1)} traffic on Route ${bus.route_id}. Expect delays.`,
+            route_id: bus.route_id,
+            bus_id: bus.bus_id,
+            timestamp: new Date().toISOString(),
+            resolved: false,
+            affected_stops: bus.route.stops
+          });
+        }
+      });
+    }
   }
 
   private updatePredictions() {
@@ -519,8 +819,13 @@ class EnhancedDataService {
       destination: route.destination,
       stops: route.stops,
       distance: route.distance,
+      color: route.color,
       stops_coordinates: route.stops_coordinates
     }));
+  }
+
+  public getRouteProgress(busId: number): number {
+    return this.routeProgress[busId] || 0;
   }
 
   public getScheduleComparison() {

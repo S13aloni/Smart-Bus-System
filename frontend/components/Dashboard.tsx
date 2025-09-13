@@ -6,9 +6,10 @@ import DemandPrediction from './DemandPrediction';
 import BeforeAfterComparison from './BeforeAfterComparison';
 import RidershipComparison from './RidershipComparison';
 import SchedulingEngine from './SchedulingEngine';
+import RouteProgress from './RouteProgress';
 import AlertsPanel from './AlertsPanel';
 import StatsOverview from './StatsOverview';
-import { enhancedDataService } from '@/lib/enhancedDataService';
+import { enhancedDataService, BusData } from '@/lib/enhancedDataService';
 
 interface DashboardProps {
   activeTab: string;
@@ -18,10 +19,13 @@ export default function Dashboard({ activeTab }: DashboardProps) {
   const [stats, setStats] = useState({
     totalBuses: 0,
     activeBuses: 0,
+    operationalBuses: 0,
     totalRoutes: 0,
     avgOccupancy: 0,
+    breakdowns: 0,
   });
   const [alerts, setAlerts] = useState(0);
+  const [buses, setBuses] = useState<BusData[]>([]);
 
   useEffect(() => {
     // Fetch initial stats from enhanced data service
@@ -34,20 +38,25 @@ export default function Dashboard({ activeTab }: DashboardProps) {
 
   const fetchStats = async () => {
     try {
-      const buses = enhancedDataService.getLiveBusData();
+      const busesData = enhancedDataService.getLiveBusData();
       const routes = enhancedDataService.getRoutes();
       const currentAlerts = enhancedDataService.getAlerts();
       
-      const activeBuses = buses.filter(bus => bus.status === 'active').length;
-      const avgOccupancy = buses.length > 0 
-        ? Math.round(buses.reduce((sum, bus) => sum + bus.occupancy_percentage, 0) / buses.length)
+      const activeBuses = busesData.filter(bus => bus.status === 'on_time' || bus.status === 'delayed').length;
+      const operationalBuses = busesData.filter(bus => bus.is_operational).length;
+      const breakdowns = busesData.filter(bus => bus.status === 'breakdown').length;
+      const avgOccupancy = busesData.length > 0 
+        ? Math.round(busesData.reduce((sum, bus) => sum + bus.occupancy_percentage, 0) / busesData.length)
         : 0;
 
+      setBuses(busesData);
       setStats({
-        totalBuses: buses.length,
+        totalBuses: busesData.length,
         activeBuses,
+        operationalBuses,
         totalRoutes: routes.length,
         avgOccupancy,
+        breakdowns,
       });
       
       setAlerts(currentAlerts.length);
@@ -68,6 +77,8 @@ export default function Dashboard({ activeTab }: DashboardProps) {
         return <RidershipComparison />;
       case 'scheduling-engine':
         return <SchedulingEngine />;
+      case 'route-progress':
+        return <RouteProgress buses={buses} />;
       default:
         return <LiveTracking />;
     }

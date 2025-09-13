@@ -154,6 +154,47 @@
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.5) !important;
 }
 
+/* Route Stop Markers */
+.route-stop-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.route-stop-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Bus Movement Animations */
+@keyframes busMove {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
+
+.bus-moving {
+  animation: busMove 2s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.progress-pulse {
+  animation: progressPulse 1.5s ease-in-out infinite;
+}
+
 /* Pulse animation for live indicators */
 .pulse-dot {
   animation: pulse 2s infinite;
