@@ -1,0 +1,21 @@
+{
+  "name": "smart-bus-optimization",
+  "version": "1.0.0",
+  "description": "Smart Bus Optimization System - Full Stack Hackathon Project",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:ml\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:ml": "cd ml-service && python -m uvicorn main:app --reload --port 8001",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../ml-service && pip install -r requirements.txt",
+    "build": "cd frontend && npm run build && cd ../backend && npm run build",
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\" \"npm run start:ml\"",
+    "start:frontend": "cd frontend && npm run start",
+    "start:backend": "cd backend && npm run start:prod",
+    "start:ml": "cd ml-service && python -m uvicorn main:app --port 8001"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
