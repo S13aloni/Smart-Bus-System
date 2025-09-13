@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { TrendingUp, Calendar, Clock, Users } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, Calendar, Clock, Users, RefreshCw } from 'lucide-react';
+import { dataService } from '@/lib/dataService';
 
 interface DemandData {
   hour: number;
@@ -30,6 +31,7 @@ export default function DemandPrediction() {
   const [routeDemand, setRouteDemand] = useState<RouteDemand[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState<number | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   useEffect(() => {
     fetchDemandData();
@@ -37,16 +39,18 @@ export default function DemandPrediction() {
 
   const fetchDemandData = async () => {
     try {
-      const [forecastResponse, routesResponse] = await Promise.all([
-        fetch('/api/demand/forecast'),
-        fetch('/api/routes'),
-      ]);
-
-      const forecast = await forecastResponse.json();
-      const routes = await routesResponse.json();
-
+      const forecast = dataService.getDemandForecast();
+      const routes = dataService.getRoutes();
+      
       setDemandForecast(forecast.forecast || []);
-      setRouteDemand(routes);
+      setRouteDemand(routes.map(route => ({
+        route_id: route.route_id,
+        period_days: 7,
+        hourly_demand: [],
+        total_passengers: Math.floor(Math.random() * 1000) + 500,
+        total_tickets: Math.floor(Math.random() * 200) + 100,
+      })));
+      setLastUpdate(new Date());
       setLoading(false);
     } catch (error) {
       console.error('Error fetching demand data:', error);
@@ -57,24 +61,17 @@ export default function DemandPrediction() {
   const triggerPrediction = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/demand/predict', {
-        method: 'POST',
-      });
-      const result = await response.json();
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (result.success) {
-        setDemandForecast(result.predictions || []);
-      }
+      const forecast = dataService.getDemandForecast();
+      setDemandForecast(forecast.forecast || []);
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error triggering prediction:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getDayName = (dayOfWeek: number) => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return days[dayOfWeek];
   };
 
   const getHourLabel = (hour: number) => {
@@ -91,11 +88,20 @@ export default function DemandPrediction() {
     .sort((a, b) => b.predicted - a.predicted)
     .slice(0, 5);
 
+  const totalPredicted = chartData.reduce((sum, item) => sum + item.predicted, 0);
+  const avgConfidence = chartData.length > 0 
+    ? Math.round(chartData.reduce((sum, item) => sum + item.confidence, 0) / chartData.length)
+    : 0;
+
   if (loading) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-96">
-          <div className="loading-spinner"></div>
+          <div className="text-center">
+            <div className="loading-spinner mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Predictions</h2>
+            <p className="text-gray-600">Analyzing demand patterns...</p>
+          </div>
         </div>
       </div>
     );
@@ -108,20 +114,26 @@ export default function DemandPrediction() {
           <h2 className="text-2xl font-bold text-gray-900">Demand Prediction</h2>
           <p className="text-gray-600">AI-powered passenger demand forecasting</p>
         </div>
-        <button
-          onClick={triggerPrediction}
-          className="btn btn-primary flex items-center space-x-2"
-        >
-          <TrendingUp className="h-4 w-4" />
-          <span>Refresh Prediction</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <div className="live-data-indicator">
+            <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
+          </div>
+          <button
+            onClick={triggerPrediction}
+            className="btn-enhanced btn-primary-enhanced flex items-center space-x-2"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Predicting...' : 'Refresh Prediction'}</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart */}
         <div className="lg:col-span-2">
-          <div className="card">
-            <div className="card-header">
+          <div className="enhanced-card">
+            <div className="enhanced-card-header">
               <h3 className="text-lg font-semibold text-gray-900">
                 24-Hour Demand Forecast
               </h3>
@@ -164,15 +176,19 @@ export default function DemandPrediction() {
         {/* Peak Hours & Stats */}
         <div className="space-y-6">
           {/* Peak Hours */}
-          <div className="card">
-            <div className="card-header">
+          <div className="enhanced-card">
+            <div className="enhanced-card-header">
               <h3 className="text-lg font-semibold text-gray-900">Peak Hours</h3>
             </div>
             <div className="space-y-3">
               {peakHours.map((hour, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+                    <div className={`w-2 h-2 rounded-full ${
+                      index === 0 ? 'bg-red-500' : 
+                      index === 1 ? 'bg-orange-500' : 
+                      index === 2 ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}></div>
                     <span className="text-sm font-medium text-gray-900">
                       {hour.hour}
                     </span>
@@ -186,8 +202,8 @@ export default function DemandPrediction() {
           </div>
 
           {/* Prediction Stats */}
-          <div className="card">
-            <div className="card-header">
+          <div className="enhanced-card">
+            <div className="enhanced-card-header">
               <h3 className="text-lg font-semibold text-gray-900">Prediction Stats</h3>
             </div>
             <div className="space-y-4">
@@ -197,7 +213,7 @@ export default function DemandPrediction() {
                   <span className="text-sm text-gray-600">Total Predicted</span>
                 </div>
                 <span className="text-lg font-semibold text-gray-900">
-                  {chartData.reduce((sum, item) => sum + item.predicted, 0)}
+                  {totalPredicted.toLocaleString()}
                 </span>
               </div>
               
@@ -217,18 +233,55 @@ export default function DemandPrediction() {
                   <span className="text-sm text-gray-600">Avg Confidence</span>
                 </div>
                 <span className="text-lg font-semibold text-gray-900">
-                  {Math.round(chartData.reduce((sum, item) => sum + item.confidence, 0) / chartData.length)}%
+                  {avgConfidence}%
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Demand Distribution */}
+          <div className="enhanced-card">
+            <div className="enhanced-card-header">
+              <h3 className="text-lg font-semibold text-gray-900">Demand Distribution</h3>
+            </div>
+            <div className="chart-container" style={{ height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Morning Peak', value: chartData.slice(6, 10).reduce((sum, item) => sum + item.predicted, 0), color: '#EF4444' },
+                      { name: 'Daytime', value: chartData.slice(10, 16).reduce((sum, item) => sum + item.predicted, 0), color: '#F59E0B' },
+                      { name: 'Evening Peak', value: chartData.slice(17, 21).reduce((sum, item) => sum + item.predicted, 0), color: '#3B82F6' },
+                      { name: 'Night', value: chartData.slice(0, 6).concat(chartData.slice(21)).reduce((sum, item) => sum + item.predicted, 0), color: '#6B7280' },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {[
+                      { name: 'Morning Peak', value: 0, color: '#EF4444' },
+                      { name: 'Daytime', value: 0, color: '#F59E0B' },
+                      { name: 'Evening Peak', value: 0, color: '#3B82F6' },
+                      { name: 'Night', value: 0, color: '#6B7280' },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} passengers`, 'Demand']} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Route Selection */}
+      {/* Route Analysis */}
       <div className="mt-6">
-        <div className="card">
-          <div className="card-header">
+        <div className="enhanced-card">
+          <div className="enhanced-card-header">
             <h3 className="text-lg font-semibold text-gray-900">Route Analysis</h3>
             <p className="text-sm text-gray-600">
               Select a route to view detailed demand analysis
@@ -256,8 +309,8 @@ export default function DemandPrediction() {
                 </div>
                 
                 <div className="space-y-1 text-sm text-gray-600">
-                  <div>Total Passengers: {route.total_passengers}</div>
-                  <div>Avg per Ticket: {route.avg_passengers_per_ticket?.toFixed(1) || 'N/A'}</div>
+                  <div>Total Passengers: {route.total_passengers.toLocaleString()}</div>
+                  <div>Avg per Ticket: {(route.total_passengers / route.total_tickets).toFixed(1)}</div>
                 </div>
               </div>
             ))}
@@ -267,4 +320,3 @@ export default function DemandPrediction() {
     </div>
   );
 }
-

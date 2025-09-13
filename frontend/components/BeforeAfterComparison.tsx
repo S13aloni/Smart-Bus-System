@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { ArrowUp, ArrowDown, Clock, Bus, TrendingUp, AlertCircle } from 'lucide-react';
+import { ArrowUp, ArrowDown, Clock, Bus, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
+import { dataService } from '@/lib/dataService';
 
 interface ScheduleData {
   bus_id: number;
@@ -36,6 +37,7 @@ export default function BeforeAfterComparison() {
   const [optimizedSchedules, setOptimizedSchedules] = useState<ScheduleData[]>([]);
   const [comparisonMetrics, setComparisonMetrics] = useState<ComparisonMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   useEffect(() => {
     fetchScheduleData();
@@ -43,12 +45,12 @@ export default function BeforeAfterComparison() {
 
   const fetchScheduleData = async () => {
     try {
-      const response = await fetch('/api/schedule/comparison');
-      const data = await response.json();
+      const data = dataService.getScheduleComparison();
       
       setCurrentSchedules(data.current_schedules || []);
       setOptimizedSchedules(data.optimized_schedules || []);
       setComparisonMetrics(data.comparison_metrics || null);
+      setLastUpdate(new Date());
       setLoading(false);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
@@ -58,24 +60,6 @@ export default function BeforeAfterComparison() {
 
   const getTimeLabel = (timeStr: string) => {
     return timeStr.substring(0, 5); // HH:MM
-  };
-
-  const calculateHeadwayData = (schedules: ScheduleData[]) => {
-    const headways = [];
-    for (let i = 1; i < schedules.length; i++) {
-      const prevTime = timeToMinutes(schedules[i-1].start_time);
-      const currTime = timeToMinutes(schedules[i].start_time);
-      headways.push({
-        bus: `Bus ${schedules[i].bus_id}`,
-        headway: currTime - prevTime,
-      });
-    }
-    return headways;
-  };
-
-  const timeToMinutes = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
   };
 
   const getEfficiencyColor = (score: number) => {
@@ -93,18 +77,25 @@ export default function BeforeAfterComparison() {
     return <span className="h-4 w-4 text-gray-500">—</span>;
   };
 
+  const getImprovementColor = (current: number, optimized: number) => {
+    if (optimized > current) return 'text-green-600';
+    if (optimized < current) return 'text-red-600';
+    return 'text-gray-600';
+  };
+
   if (loading) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-96">
-          <div className="loading-spinner"></div>
+          <div className="text-center">
+            <div className="loading-spinner mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Schedule Data</h2>
+            <p className="text-gray-600">Analyzing optimization results...</p>
+          </div>
         </div>
       </div>
     );
   }
-
-  const currentHeadways = calculateHeadwayData(currentSchedules);
-  const optimizedHeadways = calculateHeadwayData(optimizedSchedules);
 
   return (
     <div className="p-6">
@@ -113,19 +104,24 @@ export default function BeforeAfterComparison() {
           <h2 className="text-2xl font-bold text-gray-900">Before vs After Optimization</h2>
           <p className="text-gray-600">Compare current and optimized bus schedules</p>
         </div>
-        <button
-          onClick={fetchScheduleData}
-          className="btn btn-primary flex items-center space-x-2"
-        >
-          <TrendingUp className="h-4 w-4" />
-          <span>Refresh Data</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <div className="live-data-indicator">
+            <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
+          </div>
+          <button
+            onClick={fetchScheduleData}
+            className="btn-enhanced btn-primary-enhanced flex items-center space-x-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Refresh Data</span>
+          </button>
+        </div>
       </div>
 
       {/* Metrics Overview */}
       {comparisonMetrics && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="card">
+          <div className="enhanced-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Total Buses</h3>
               {getImprovementIcon(comparisonMetrics.total_buses.current, comparisonMetrics.total_buses.optimized)}
@@ -146,7 +142,7 @@ export default function BeforeAfterComparison() {
             </div>
           </div>
 
-          <div className="card">
+          <div className="enhanced-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Avg Headway</h3>
               {getImprovementIcon(comparisonMetrics.average_headway_minutes.current, comparisonMetrics.average_headway_minutes.optimized)}
@@ -159,15 +155,23 @@ export default function BeforeAfterComparison() {
                 <div className="text-sm text-gray-600">Current</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary-600">
+                <div className={`text-2xl font-bold ${getImprovementColor(comparisonMetrics.average_headway_minutes.current, comparisonMetrics.average_headway_minutes.optimized)}`}>
                   {comparisonMetrics.average_headway_minutes.optimized.toFixed(1)}m
                 </div>
                 <div className="text-sm text-gray-600">Optimized</div>
               </div>
             </div>
+            <div className="mt-2 text-center">
+              <span className={`text-sm font-medium ${
+                comparisonMetrics.average_headway_minutes.improvement > 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {comparisonMetrics.average_headway_minutes.improvement > 0 ? '+' : ''}
+                {comparisonMetrics.average_headway_minutes.improvement.toFixed(1)}m improvement
+              </span>
+            </div>
           </div>
 
-          <div className="card">
+          <div className="enhanced-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Efficiency Score</h3>
               {getImprovementIcon(comparisonMetrics.efficiency_score.current, comparisonMetrics.efficiency_score.optimized)}
@@ -192,14 +196,22 @@ export default function BeforeAfterComparison() {
                 <div className="text-sm text-gray-600">Optimized</div>
               </div>
             </div>
+            <div className="mt-2 text-center">
+              <span className={`text-sm font-medium ${
+                comparisonMetrics.efficiency_score.optimized > comparisonMetrics.efficiency_score.current ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {comparisonMetrics.efficiency_score.optimized > comparisonMetrics.efficiency_score.current ? '+' : ''}
+                {(comparisonMetrics.efficiency_score.optimized - comparisonMetrics.efficiency_score.current).toFixed(1)} points
+              </span>
+            </div>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Headway Comparison Chart */}
-        <div className="card">
-          <div className="card-header">
+        <div className="enhanced-card">
+          <div className="enhanced-card-header">
             <h3 className="text-lg font-semibold text-gray-900">Headway Comparison</h3>
             <p className="text-sm text-gray-600">
               Time between consecutive buses (lower is better)
@@ -222,8 +234,8 @@ export default function BeforeAfterComparison() {
         </div>
 
         {/* Efficiency Score Chart */}
-        <div className="card">
-          <div className="card-header">
+        <div className="enhanced-card">
+          <div className="enhanced-card-header">
             <h3 className="text-lg font-semibold text-gray-900">Efficiency Scores</h3>
             <p className="text-sm text-gray-600">
               Overall schedule efficiency (higher is better)
@@ -260,8 +272,8 @@ export default function BeforeAfterComparison() {
 
       {/* Schedule Details */}
       <div className="mt-6">
-        <div className="card">
-          <div className="card-header">
+        <div className="enhanced-card">
+          <div className="enhanced-card-header">
             <h3 className="text-lg font-semibold text-gray-900">Schedule Adjustments</h3>
             <p className="text-sm text-gray-600">
               Detailed view of schedule changes and optimization reasons
@@ -293,12 +305,15 @@ export default function BeforeAfterComparison() {
                 {optimizedSchedules.map((schedule, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      Bus {schedule.bus_id}
+                      <div className="flex items-center space-x-2">
+                        <Bus className="h-4 w-4 text-gray-400" />
+                        <span>Bus {schedule.bus_id}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {getTimeLabel(schedule.original_start_time || schedule.start_time)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                       {getTimeLabel(schedule.start_time)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -328,4 +343,3 @@ export default function BeforeAfterComparison() {
     </div>
   );
 }
-
