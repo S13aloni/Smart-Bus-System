@@ -145,151 +145,130 @@ export default function LiveTracking() {
         </div>
       </div>
 
-      {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="enhanced-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Buses</p>
-              <p className="text-2xl font-bold text-gray-900">{activeBuses.length}</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Bus className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="enhanced-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Passengers</p>
-              <p className="text-2xl font-bold text-gray-900">{totalPassengers}</p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Users className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="enhanced-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Avg Occupancy</p>
-              <p className="text-2xl font-bold text-gray-900">{avgOccupancy}%</p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <div className="w-6 h-6 bg-orange-500 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="enhanced-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Delayed Buses</p>
-              <p className="text-2xl font-bold text-gray-900">{delayedBuses}</p>
-            </div>
-            <div className="p-3 bg-red-100 rounded-lg">
-              <Calendar className="h-6 w-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="enhanced-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Last Update</p>
-              <p className="text-sm font-bold text-gray-900">
-                {lastUpdate.toLocaleTimeString()}
-              </p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Clock className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Map */}
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Map - Takes up more space */}
+        <div className="lg:col-span-3">
           <div className="enhanced-card p-0 overflow-hidden">
-            <div className="h-96">
+            <div className="h-[600px] relative">
               <BusMap 
                 buses={buses} 
                 selectedBus={selectedBus}
                 onBusSelect={setSelectedBus}
               />
+              
+              {/* Compact Stats Overlay on Map */}
+              <div className="absolute top-4 left-4 right-4 map-stats-overlay">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <Bus className="h-4 w-4 text-blue-600" />
+                      <div>
+                        <p className="text-xs text-gray-600">Active</p>
+                        <p className="text-lg font-bold text-gray-900">{activeBuses.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-green-600" />
+                      <div>
+                        <p className="text-xs text-gray-600">Passengers</p>
+                        <p className="text-lg font-bold text-gray-900">{totalPassengers}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                      <div>
+                        <p className="text-xs text-gray-600">Occupancy</p>
+                        <p className="text-lg font-bold text-gray-900">{avgOccupancy}%</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-red-600" />
+                      <div>
+                        <p className="text-xs text-gray-600">Delayed</p>
+                        <p className="text-lg font-bold text-gray-900">{delayedBuses}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Enhanced Bus List */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Active Buses</h3>
-            <span className="text-sm text-gray-500">{buses.length} total</span>
+        {/* Compact Bus List */}
+        <div className="flex flex-col h-[600px]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Live Buses</h3>
+            <span className="text-sm text-gray-500">{buses.length}</span>
           </div>
           
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="flex-1 space-y-2 overflow-y-auto">
             {buses.map((bus) => {
               const delayStatus = getDelayStatus(bus.schedule.delay_minutes);
               return (
                 <div
                   key={bus.bus_id}
-                  className={`bus-list-item ${
-                    selectedBus?.bus_id === bus.bus_id ? 'selected' : ''
+                  className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                    selectedBus?.bus_id === bus.bus_id 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                   onClick={() => setSelectedBus(bus)}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <div className={`w-3 h-3 rounded-full ${getOccupancyColor(bus.occupancy_percentage)}`}></div>
-                      <span className="font-medium text-gray-900">{bus.license_plate}</span>
+                      <div className={`w-2 h-2 rounded-full ${getOccupancyColor(bus.occupancy_percentage)}`}></div>
+                      <span className="font-medium text-sm text-gray-900">{bus.license_plate}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`status-badge ${getStatusColor(bus.status)}`}>
+                    <div className="flex items-center space-x-1">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        bus.status === 'on_time' ? 'bg-green-100 text-green-800' :
+                        bus.status === 'delayed' ? 'bg-orange-100 text-orange-800' :
+                        bus.status === 'breakdown' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
                         {bus.status}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-600 truncate">
+                      {bus.route.source} → {bus.route.destination}
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">
+                        {bus.occupancy}/{bus.capacity} ({bus.occupancy_percentage}%)
                       </span>
                       <span className={`text-xs font-medium ${delayStatus.color}`}>
                         {delayStatus.label}
                       </span>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <MapPin className="h-3 w-3" />
-                      <span className="truncate">{bus.route.source} → {bus.route.destination}</span>
-                    </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-3 w-3 text-gray-600" />
-                        <span className="text-sm text-gray-600">
-                          {bus.occupancy}/{bus.capacity}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">
-                          {bus.occupancy_percentage}%
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {getOccupancyLabel(bus.occupancy_percentage)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="occupancy-bar">
+                    <div className="w-full bg-gray-200 rounded-full h-1">
                       <div
-                        className={`occupancy-fill ${getOccupancyColor(bus.occupancy_percentage)}`}
+                        className={`h-1 rounded-full ${
+                          bus.occupancy_percentage < 30 ? 'bg-green-500' :
+                          bus.occupancy_percentage < 60 ? 'bg-yellow-500' :
+                          bus.occupancy_percentage < 90 ? 'bg-orange-500' : 'bg-red-500'
+                        }`}
                         style={{ width: `${bus.occupancy_percentage}%` }}
                       ></div>
                     </div>
                     
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>Speed: {Math.round(bus.current_position.speed)} km/h</span>
-                      <span>Delay: {bus.schedule.delay_minutes > 0 ? '+' : ''}{bus.schedule.delay_minutes}m</span>
+                      <span>{Math.round(bus.current_position.speed)} km/h</span>
+                      <span>{bus.schedule.delay_minutes > 0 ? '+' : ''}{bus.schedule.delay_minutes}m</span>
                     </div>
                   </div>
                 </div>

@@ -315,3 +315,105 @@
 .btn-secondary-enhanced {
   @apply bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300 hover:bg-gray-300;
 }
+
+/* Map container styles */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 1 !important;
+}
+
+.leaflet-map-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 4 !important;
+}
+
+/* Map overlay styles */
+.map-stats-overlay {
+  z-index: 10 !important;
+  pointer-events: none;
+}
+
+.map-stats-overlay > * {
+  pointer-events: auto;
+}
+
+/* Hover button for bus info */
+.hover-info-button {
+  @apply absolute top-4 left-4 bg-white rounded-lg shadow-lg p-3 z-20 cursor-pointer transition-all duration-200 hover:shadow-xl;
+}
+
+.hover-info-button:hover {
+  @apply transform scale-105;
+}
+
+.hover-info-content {
+  @apply absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-10 opacity-0 invisible transition-all duration-300 transform translate-y-2;
+  min-width: 280px;
+}
+
+.hover-info-button:hover + .hover-info-content {
+  @apply opacity-100 visible transform translate-y-0;
+}
+
+.hover-info-content:hover {
+  @apply opacity-100 visible transform translate-y-0;
+}
+
+/* Info button icon */
+.info-button-icon {
+  @apply w-8 h-8 flex items-center justify-center rounded-lg bg-primary-100 text-primary-600 transition-colors duration-200;
+}
+
+.hover-info-button:hover .info-button-icon {
+  @apply bg-primary-600 text-white;
+}
+
+/* Bus occupancy legend */
+.occupancy-legend {
+  @apply space-y-2;
+}
+
+.occupancy-legend-item {
+  @apply flex items-center space-x-2;
+}
+
+.occupancy-legend-dot {
+  @apply w-3 h-3 rounded-full;
+}
+
+.occupancy-legend-text {
+  @apply text-xs text-gray-600;
+}
+
+/* Routes legend */
+.routes-legend {
+  @apply space-y-2 mt-4;
+}
+
+.routes-legend-item {
+  @apply flex items-center space-x-2;
+}
+
+.routes-legend-dot {
+  @apply w-3 h-3 rounded-full;
+}
+
+.routes-legend-text {
+  @apply text-xs text-gray-600;
+}

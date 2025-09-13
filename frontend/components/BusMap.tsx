@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Bus, Users, Clock, Navigation, Calendar, AlertTriangle } from 'lucide-react';
+import { Bus, Users, Clock, Navigation, Calendar, AlertTriangle, Info } from 'lucide-react';
 import { BusData } from '@/lib/enhancedDataService';
 import { enhancedDataService } from '@/lib/enhancedDataService';
 import { Polyline } from 'react-leaflet';
@@ -328,45 +328,52 @@ export default function BusMap({ buses, selectedBus, onBusSelect }: BusMapProps)
         })}
       </MapContainer>
       
-      {/* Map Controls */}
-      <div className="map-controls">
-        <div className="space-y-2">
-          <div className="bg-white rounded-lg shadow-sm p-2">
-            <h4 className="text-xs font-medium text-gray-700 mb-2">Bus Occupancy</h4>
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Low (0-30%)</span>
+      {/* Hover Info Button */}
+      <div className="hover-info-button">
+        <div className="info-button-icon">
+          <Info className="h-5 w-5" />
+        </div>
+      </div>
+      
+      {/* Hover Info Content */}
+      <div className="hover-info-content">
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Bus Occupancy</h4>
+            <div className="occupancy-legend">
+              <div className="occupancy-legend-item">
+                <div className="occupancy-legend-dot bg-green-500"></div>
+                <span className="occupancy-legend-text">Low (0-30%)</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Medium (30-60%)</span>
+              <div className="occupancy-legend-item">
+                <div className="occupancy-legend-dot bg-yellow-500"></div>
+                <span className="occupancy-legend-text">Medium (30-60%)</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">High (60-90%)</span>
+              <div className="occupancy-legend-item">
+                <div className="occupancy-legend-dot bg-orange-500"></div>
+                <span className="occupancy-legend-text">High (60-90%)</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Full (90%+)</span>
+              <div className="occupancy-legend-item">
+                <div className="occupancy-legend-dot bg-red-500"></div>
+                <span className="occupancy-legend-text">Full (90%+)</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-yellow-400"></div>
-                <span className="text-xs text-gray-600">Delayed</span>
+              <div className="occupancy-legend-item">
+                <div className="occupancy-legend-dot bg-red-500 border-2 border-yellow-400"></div>
+                <span className="occupancy-legend-text">Delayed</span>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-sm p-2">
-            <h4 className="text-xs font-medium text-gray-700 mb-2">Routes</h4>
-            <div className="space-y-1">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Routes</h4>
+            <div className="routes-legend">
               {routes.map((route) => (
-                <div key={route.route_id} className="flex items-center space-x-2">
+                <div key={route.route_id} className="routes-legend-item">
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="routes-legend-dot" 
                     style={{ backgroundColor: route.color }}
                   ></div>
-                  <span className="text-xs text-gray-600">
+                  <span className="routes-legend-text">
                     Route {route.route_id}: {route.source} → {route.destination}
                   </span>
                 </div>
