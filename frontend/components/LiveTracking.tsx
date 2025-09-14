@@ -156,8 +156,8 @@ export default function LiveTracking() {
                 onBusSelect={setSelectedBus}
               />
               
-              {/* Compact Stats Overlay on Map */}
-              <div className="absolute top-4 left-4 right-4 map-stats-overlay">
+        {/* Compact Stats Overlay on Map */}
+        <div className="absolute top-4 left-4 right-4 map-stats-overlay" style={{ zIndex: 30 }}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
                     <div className="flex items-center space-x-2">

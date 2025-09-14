@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Bus, BarChart3, MapPin, Settings, TrendingUp, Cpu, Route, X, Menu, Wifi, WifiOff, ChevronDown, User, Bell, HelpCircle, LogOut, Search, Cloud, Database, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { notificationService } from '@/services/notificationService';
 
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onCollapseChange?: (isCollapsed: boolean) => void;
 }
 
 const tabs = [
@@ -15,13 +17,15 @@ const tabs = [
   { id: 'before-after', label: 'Schedule Optimization', icon: Settings, description: 'Optimize bus schedules' },
   { id: 'ridership-analysis', label: 'Ridership Analysis', icon: TrendingUp, description: 'Analyze passenger patterns' },
   { id: 'scheduling-engine', label: 'Scheduling Engine', icon: Cpu, description: 'AI-powered scheduling' },
+  { id: 'notifications', label: 'Alerts & Notifications', icon: Bell, description: 'System alerts and notifications' },
 ];
 
-export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+export default function Sidebar({ activeTab, onTabChange, onCollapseChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Check online status
   useEffect(() => {
@@ -37,10 +41,32 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
     };
   }, []);
 
+  // Subscribe to notification updates
+  useEffect(() => {
+    const unsubscribe = notificationService.subscribe((notifications) => {
+      const unread = notifications.filter(n => !n.isRead).length;
+      setUnreadCount(unread);
+    });
+
+    // Initial load
+    const notifications = notificationService.getNotifications();
+    const unread = notifications.filter(n => !n.isRead).length;
+    setUnreadCount(unread);
+
+    return unsubscribe;
+  }, []);
+
   // Close mobile menu when a tab is selected
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
     setIsMobileMenuOpen(false);
+  };
+
+  // Handle sidebar collapse
+  const handleCollapseToggle = () => {
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    onCollapseChange?.(newCollapsedState);
   };
 
   // Filter tabs based on search query
@@ -54,7 +80,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       {/* Desktop Sidebar */}
       <aside className={`hidden lg:flex flex-col bg-gradient-to-b from-gray-900/95 via-blue-900/95 to-gray-900/95 backdrop-blur-md transition-all duration-500 ease-in-out ${
         isCollapsed ? 'w-20' : 'w-72'
-      } min-h-screen sticky top-0 z-40 border-r border-white/10 shadow-2xl`}>
+      } min-h-screen fixed left-0 top-0 z-40 border-r border-white/10 shadow-2xl`}>
         
         {/* Logo and Toggle Button Container */}
         <div className="relative p-5 border-b border-white/10">
@@ -77,7 +103,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             {/* Toggle Button - Positioned differently based on state */}
             {!isCollapsed && (
               <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
+                onClick={handleCollapseToggle}
                 className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300"
                 aria-label="Collapse sidebar"
               >
@@ -89,7 +115,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           {/* Toggle Button when sidebar is collapsed - Positioned above bus icon */}
           {isCollapsed && (
             <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={handleCollapseToggle}
               className="absolute -right-3 top-1/2 transform -translate-y-1/2 z-50 p-1.5 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-full border-2 border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
               aria-label="Expand sidebar"
             >
@@ -136,11 +162,22 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                   {isActive && !isCollapsed && (
                     <div className="absolute -inset-1 bg-blue-500/20 rounded-lg blur-sm z-0"></div>
                   )}
+                  {/* Notification indicator for notifications tab */}
+                  {tab.id === 'notifications' && unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900 animate-pulse"></div>
+                  )}
                 </div>
                 {!isCollapsed && (
                   <>
                     <div className="flex flex-col items-start">
-                      <span className="font-medium text-sm">{tab.label}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-sm">{tab.label}</span>
+                        {tab.id === 'notifications' && unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-blue-300/70 font-light">{tab.description}</span>
                     </div>
                     {isActive && (
@@ -182,7 +219,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 bg-gradient-to-r from-gray-900/95 via-blue-900/95 to-gray-900/95 backdrop-blur-md border-b border-white/10">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-gray-900/95 via-blue-900/95 to-gray-900/95 backdrop-blur-md border-b border-white/10">
         {/* Top status bar */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-1.5 px-4 text-xs text-white text-center">
           <div className="flex justify-between items-center">
@@ -239,7 +276,7 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
         {/* Mobile Navigation - Full screen overlay */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 bg-gradient-to-b from-gray-900 to-blue-900/95 backdrop-blur-md z-50 mt-16">
+          <div className="fixed inset-0 bg-gradient-to-b from-gray-900 to-blue-900/95 backdrop-blur-md z-50 pt-16">
             <div className="flex flex-col h-full">
               {/* Search Bar */}
               <div className="p-4 border-b border-white/10">
@@ -293,9 +330,22 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                           : 'text-blue-200/90 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      <Icon className="h-5 w-5" />
+                      <div className="relative">
+                        <Icon className="h-5 w-5" />
+                        {/* Notification indicator for notifications tab in mobile */}
+                        {tab.id === 'notifications' && unreadCount > 0 && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900 animate-pulse"></div>
+                        )}
+                      </div>
                       <div className="flex flex-col items-start">
-                        <span className="text-lg font-medium">{tab.label}</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg font-medium">{tab.label}</span>
+                          {tab.id === 'notifications' && unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-sm text-blue-300/70 font-light">{tab.description}</span>
                       </div>
                       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -312,9 +362,16 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                     <span className="text-xs">Help</span>
                   </button>
                   <button className="flex flex-col items-center p-2 rounded-xl text-white hover:bg-white/5 transition-colors relative">
-                    <Bell className="h-5 w-5 mb-1" />
+                    <div className="relative">
+                      <Bell className="h-5 w-5 mb-1" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-900 animate-pulse"></span>
+                      )}
+                    </div>
                     <span className="text-xs">Alerts</span>
-                    <span className="absolute top-1.5 right-4 w-2 h-2 bg-red-500 rounded-full ring-2 ring-gray-900"></span>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-4 w-2 h-2 bg-red-500 rounded-full ring-2 ring-gray-900"></span>
+                    )}
                   </button>
                   <button className="flex flex-col items-center p-2 rounded-xl text-white hover:bg-white/5 transition-colors">
                     <Settings className="h-5 w-5 mb-1" />

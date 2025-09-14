@@ -11,10 +11,9 @@ interface StatsOverviewProps {
     avgOccupancy: number;
     breakdowns: number;
   };
-  alerts: number;
 }
 
-export default function StatsOverview({ stats, alerts }: StatsOverviewProps) {
+export default function StatsOverview({ stats }: StatsOverviewProps) {
   const statCards = [
     {
       title: 'Total Buses',
@@ -56,18 +55,10 @@ export default function StatsOverview({ stats, alerts }: StatsOverviewProps) {
       change: stats.breakdowns > 0 ? 'Needs Repair' : 'All Good',
       changeType: stats.breakdowns > 0 ? 'negative' as const : 'neutral' as const,
     },
-    {
-      title: 'Active Alerts',
-      value: alerts,
-      icon: AlertTriangle,
-      color: alerts > 0 ? 'from-yellow-500 to-yellow-600' : 'from-gray-500 to-gray-600',
-      change: alerts > 0 ? 'Weather/Traffic' : 'All Clear',
-      changeType: alerts > 0 ? 'negative' as const : 'neutral' as const,
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
       {statCards.map((stat, index) => {
         const Icon = stat.icon;
         return (
@@ -84,7 +75,7 @@ export default function StatsOverview({ stats, alerts }: StatsOverviewProps) {
             <div className="mt-4 flex items-center">
               <span className="text-sm text-white opacity-90">
                 {stat.changeType === 'positive' && '+'}
-                {stat.changeType === 'negative' && alerts > 0 && '⚠️ '}
+                {stat.changeType === 'negative' && '⚠️ '}
                 {stat.change}
               </span>
               <span className="text-xs text-white opacity-75 ml-2">

@@ -329,14 +329,14 @@ export default function BusMap({ buses, selectedBus, onBusSelect }: BusMapProps)
       </MapContainer>
       
       {/* Hover Info Button */}
-      <div className="hover-info-button">
+      <div className="hover-info-button" style={{ zIndex: 40 }}>
         <div className="info-button-icon">
           <Info className="h-5 w-5" />
         </div>
       </div>
       
       {/* Hover Info Content */}
-      <div className="hover-info-content">
+      <div className="hover-info-content" style={{ zIndex: 50 }}>
         <div className="space-y-4">
           <div>
             <h4 className="text-sm font-semibold text-gray-900 mb-3">Bus Occupancy</h4>

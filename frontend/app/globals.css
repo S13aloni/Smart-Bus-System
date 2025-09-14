@@ -345,7 +345,7 @@
 
 /* Map overlay styles */
 .map-stats-overlay {
-  z-index: 10 !important;
+  z-index: 30 !important;
   pointer-events: none;
 }
 
@@ -355,7 +355,7 @@
 
 /* Hover button for bus info */
 .hover-info-button {
-  @apply absolute top-4 left-4 bg-white rounded-lg shadow-lg p-3 z-20 cursor-pointer transition-all duration-200 hover:shadow-xl;
+  @apply absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-40 cursor-pointer transition-all duration-200 hover:shadow-xl;
 }
 
 .hover-info-button:hover {
@@ -363,8 +363,9 @@
 }
 
 .hover-info-content {
-  @apply absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 z-10 opacity-0 invisible transition-all duration-300 transform translate-y-2;
+  @apply absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 z-50 opacity-0 invisible transition-all duration-300 transform translate-y-2;
   min-width: 280px;
+  margin-bottom: 60px; /* Position above the button */
 }
 
 .hover-info-button:hover + .hover-info-content {
@@ -373,6 +374,16 @@
 
 .hover-info-content:hover {
   @apply opacity-100 visible transform translate-y-0;
+}
+
+/* Ensure hover info content appears above all other elements */
+.hover-info-content {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Make sure the hover info button is always clickable */
+.hover-info-button {
+  pointer-events: auto;
 }
 
 /* Info button icon */

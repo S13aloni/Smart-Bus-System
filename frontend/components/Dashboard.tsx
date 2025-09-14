@@ -7,8 +7,8 @@ import BeforeAfterComparison from './BeforeAfterComparison';
 import RidershipComparison from './RidershipComparison';
 import SchedulingEngine from './SchedulingEngine';
 import RouteProgress from './RouteProgress';
-import AlertsPanel from './AlertsPanel';
 import StatsOverview from './StatsOverview';
+import NotificationsPage from './NotificationsPage';
 import { enhancedDataService, BusData } from '@/lib/enhancedDataService';
 
 interface DashboardProps {
@@ -24,7 +24,6 @@ export default function Dashboard({ activeTab }: DashboardProps) {
     avgOccupancy: 0,
     breakdowns: 0,
   });
-  const [alerts, setAlerts] = useState(0);
   const [buses, setBuses] = useState<BusData[]>([]);
 
   useEffect(() => {
@@ -40,7 +39,6 @@ export default function Dashboard({ activeTab }: DashboardProps) {
     try {
       const busesData = enhancedDataService.getLiveBusData();
       const routes = enhancedDataService.getRoutes();
-      const currentAlerts = enhancedDataService.getAlerts();
       
       const activeBuses = busesData.filter(bus => bus.status === 'on_time' || bus.status === 'delayed').length;
       const operationalBuses = busesData.filter(bus => bus.is_operational).length;
@@ -58,8 +56,6 @@ export default function Dashboard({ activeTab }: DashboardProps) {
         avgOccupancy,
         breakdowns,
       });
-      
-      setAlerts(currentAlerts.length);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -79,6 +75,8 @@ export default function Dashboard({ activeTab }: DashboardProps) {
         return <SchedulingEngine />;
       case 'route-progress':
         return <RouteProgress buses={buses} />;
+      case 'notifications':
+        return <NotificationsPage />;
       default:
         return <LiveTracking />;
     }
@@ -86,14 +84,13 @@ export default function Dashboard({ activeTab }: DashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <StatsOverview stats={stats} alerts={alerts} />
-
-      {/* Alerts Panel */}
-      <AlertsPanel />
+      {/* Stats Overview - only show for non-notification pages */}
+      {activeTab !== 'notifications' && (
+        <StatsOverview stats={stats} />
+      )}
 
       {/* Tab Content */}
-      <div className="enhanced-card">
+      <div className={activeTab === 'notifications' ? '' : 'enhanced-card'}>
         {renderTabContent()}
       </div>
     </div>

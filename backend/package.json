@@ -17,7 +17,12 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed": "node seed-database.js",
+    "seed:clear": "curl -X DELETE http://localhost:3001/seed",
+    "reset:ahmedabad": "node reset-ahmedabad-db.js",
+    "force:ahmedabad": "node force-reset-ahmedabad.js",
+    "manual:reset": "node manual-reset.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

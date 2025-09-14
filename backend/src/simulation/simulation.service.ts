@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { GpsLog } from '../entities/gps-log.entity';
 import { PassengerCount } from '../entities/passenger-count.entity';
 import { Bus } from '../entities/bus.entity';
+import { Route } from '../entities/route.entity';
 
 @Injectable()
 export class SimulationService implements OnModuleInit {
@@ -17,11 +18,186 @@ export class SimulationService implements OnModuleInit {
     private passengerCountRepository: Repository<PassengerCount>,
     @InjectRepository(Bus)
     private busRepository: Repository<Bus>,
+    @InjectRepository(Route)
+    private routeRepository: Repository<Route>,
   ) {}
 
   async onModuleInit() {
+    // Check if database has data, if not, seed it
+    await this.ensureDatabaseHasData();
+    
     // Start simulation automatically when module initializes
     await this.startSimulation();
+  }
+
+  private async ensureDatabaseHasData(): Promise<void> {
+    try {
+      const routeCount = await this.routeRepository.count();
+      const busCount = await this.busRepository.count();
+
+      // Check if we have old data (non-Ahmedabad routes)
+      const existingRoutes = await this.routeRepository.find();
+      const hasOldData = existingRoutes.some(route => 
+        route.source.includes('Downtown') || 
+        route.source.includes('Airport') || 
+        route.source.includes('North Station') ||
+        route.source.includes('South Station')
+      );
+
+      if (routeCount === 0 || busCount === 0 || hasOldData) {
+        if (hasOldData) {
+          console.log('🔄 Detected old data, clearing and reseeding with Ahmedabad routes...');
+          await this.clearOldData();
+        } else {
+          console.log('🌱 Database is empty, seeding initial data...');
+        }
+        await this.seedInitialData();
+      } else {
+        console.log('✅ Database already contains valid data');
+      }
+    } catch (error) {
+      console.error('Error ensuring database has data:', error);
+      throw error;
+    }
+  }
+
+  
+  private async clearOldData(): Promise<void> {
+    try {
+      // Clear all related data in correct order using query builder
+      await this.gpsLogRepository.createQueryBuilder().delete().execute();
+      await this.passengerCountRepository.createQueryBuilder().delete().execute();
+      await this.busRepository.createQueryBuilder().delete().execute();
+      await this.routeRepository.createQueryBuilder().delete().execute();
+      console.log('✅ Old data cleared');
+    } catch (error) {
+      console.error('Error clearing old data:', error);
+      throw error;
+    }
+  }
+
+  private async seedInitialData(): Promise<void> {
+    // Seed Routes - Ahmedabad based routes
+    const routes = [
+      {
+        source: 'Ahmedabad Railway Station',
+        destination: 'Sardar Vallabhbhai Patel International Airport',
+        stops: [
+          'Ahmedabad Railway Station',
+          'Kalupur',
+          'Maninagar',
+          'Vastrapur',
+          'Bodakdev',
+          'Sardar Vallabhbhai Patel International Airport'
+        ],
+        distance: 12.8
+      },
+      {
+        source: 'Sardar Vallabhbhai Patel International Airport',
+        destination: 'Ahmedabad Railway Station',
+        stops: [
+          'Sardar Vallabhbhai Patel International Airport',
+          'Bodakdev',
+          'Vastrapur',
+          'Maninagar',
+          'Kalupur',
+          'Ahmedabad Railway Station'
+        ],
+        distance: 12.8
+      },
+      {
+        source: 'Gandhinagar Bus Stand',
+        destination: 'Ahmedabad Central Bus Station',
+        stops: [
+          'Gandhinagar Bus Stand',
+          'Sector 21',
+          'Infocity',
+          'Chandkheda',
+          'Naroda',
+          'Ahmedabad Central Bus Station'
+        ],
+        distance: 15.2
+      },
+      {
+        source: 'Ahmedabad Central Bus Station',
+        destination: 'Gandhinagar Bus Stand',
+        stops: [
+          'Ahmedabad Central Bus Station',
+          'Naroda',
+          'Chandkheda',
+          'Infocity',
+          'Sector 21',
+          'Gandhinagar Bus Stand'
+        ],
+        distance: 15.2
+      },
+      {
+        source: 'Sabarmati Riverfront',
+        destination: 'Science City',
+        stops: [
+          'Sabarmati Riverfront',
+          'Ellis Bridge',
+          'Law Garden',
+          'Navrangpura',
+          'Paldi',
+          'Science City'
+        ],
+        distance: 8.5
+      },
+      {
+        source: 'Science City',
+        destination: 'Sabarmati Riverfront',
+        stops: [
+          'Science City',
+          'Paldi',
+          'Navrangpura',
+          'Law Garden',
+          'Ellis Bridge',
+          'Sabarmati Riverfront'
+        ],
+        distance: 8.5
+      }
+    ];
+
+    for (const routeData of routes) {
+      const route = this.routeRepository.create(routeData);
+      await this.routeRepository.save(route);
+    }
+
+    // Seed Buses
+    const allRoutes = await this.routeRepository.find();
+    for (const route of allRoutes) {
+      for (let i = 0; i < 2; i++) {
+        const bus = this.busRepository.create({
+          route_id: route.route_id,
+          capacity: 50 + Math.floor(Math.random() * 20),
+          status: 'active',
+          license_plate: this.generateLicensePlate(),
+        });
+        await this.busRepository.save(bus);
+      }
+    }
+
+    console.log('✅ Database seeded with initial data');
+  }
+
+  private generateLicensePlate(): string {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    
+    let plate = '';
+    
+    // Add 2-3 random letters
+    for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) {
+      plate += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    
+    // Add 3-4 random numbers
+    for (let i = 0; i < 3 + Math.floor(Math.random() * 2); i++) {
+      plate += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    
+    return plate;
   }
 
   async startSimulation(): Promise<void> {
@@ -127,10 +303,10 @@ export class SimulationService implements OnModuleInit {
       };
     }
 
-    // Default starting position if no GPS data exists
+    // Default starting position if no GPS data exists (Ahmedabad coordinates)
     return {
-      latitude: 40.7128 + (Math.random() - 0.5) * 0.1,
-      longitude: -74.0060 + (Math.random() - 0.5) * 0.1,
+      latitude: 23.0225 + (Math.random() - 0.5) * 0.1,
+      longitude: 72.5714 + (Math.random() - 0.5) * 0.1,
       speed: 25 + Math.random() * 15,
       direction: Math.random() * 360,
     };
@@ -164,11 +340,22 @@ export class SimulationService implements OnModuleInit {
     const speedVariation = (Math.random() - 0.5) * 10;
     const directionVariation = (Math.random() - 0.5) * 20;
 
+    // Ensure proper numeric values and handle potential string concatenation
+    const latValue = typeof currentPosition.latitude === 'string' ? parseFloat(currentPosition.latitude) : currentPosition.latitude;
+    const lngValue = typeof currentPosition.longitude === 'string' ? parseFloat(currentPosition.longitude) : currentPosition.longitude;
+    const speedValue = typeof currentPosition.speed === 'string' ? parseFloat(currentPosition.speed) : currentPosition.speed;
+    const directionValue = typeof currentPosition.direction === 'string' ? parseFloat(currentPosition.direction) : currentPosition.direction;
+    
+    const newLatitude = parseFloat((latValue + latChange + latVariation).toFixed(8));
+    const newLongitude = parseFloat((lngValue + lngChange + lngVariation).toFixed(8));
+    const newSpeed = Math.max(0, parseFloat((speedValue + speedVariation).toFixed(2)));
+    const newDirection = parseFloat(((directionValue + directionVariation) % 360).toFixed(2));
+
     return {
-      latitude: currentPosition.latitude + latChange + latVariation,
-      longitude: currentPosition.longitude + lngChange + lngVariation,
-      speed: Math.max(0, currentPosition.speed + speedVariation),
-      direction: (currentPosition.direction + directionVariation) % 360,
+      latitude: newLatitude,
+      longitude: newLongitude,
+      speed: newSpeed,
+      direction: newDirection,
     };
   }
 
