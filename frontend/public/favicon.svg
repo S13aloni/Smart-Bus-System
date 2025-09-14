@@ -1,0 +1,42 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bus body with gradient -->
+  <defs>
+    <linearGradient id="busGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Bus body -->
+  <rect x="4" y="8" width="24" height="16" rx="2" fill="url(#busGradient)" stroke="#1E40AF" stroke-width="1"/>
+  
+  <!-- Bus windows -->
+  <rect x="6" y="10" width="20" height="6" rx="1" fill="#E0F2FE"/>
+  <rect x="6" y="18" width="20" height="4" rx="1" fill="#E0F2FE"/>
+  
+  <!-- Window dividers -->
+  <line x1="16" y1="10" x2="16" y2="16" stroke="#CBD5E1" stroke-width="0.5"/>
+  <line x1="26" y1="10" x2="26" y2="16" stroke="#CBD5E1" stroke-width="0.5"/>
+  
+  <!-- Bus door -->
+  <rect x="14" y="18" width="4" height="4" fill="#1E40AF"/>
+  <line x1="16" y1="18" x2="16" y2="22" stroke="#3B82F6" stroke-width="0.5"/>
+  
+  <!-- Wheels -->
+  <circle cx="8" cy="26" r="3" fill="#374151"/>
+  <circle cx="24" cy="26" r="3" fill="#374151"/>
+  <circle cx="8" cy="26" r="2" fill="#6B7280"/>
+  <circle cx="24" cy="26" r="2" fill="#6B7280"/>
+  <circle cx="8" cy="26" r="1" fill="#9CA3AF"/>
+  <circle cx="24" cy="26" r="1" fill="#9CA3AF"/>
+  
+  <!-- Headlights -->
+  <circle cx="6" cy="12" r="1" fill="#FEF3C7"/>
+  <circle cx="26" cy="12" r="1" fill="#FEF3C7"/>
+  
+  <!-- Bus number -->
+  <text x="16" y="15" text-anchor="middle" font-family="Arial, sans-serif" font-size="6" font-weight="bold" fill="#1E40AF">SBS</text>
+  
+  <!-- Route indicator -->
+  <rect x="28" y="6" width="3" height="3" rx="1" fill="#EF4444"/>
+</svg>

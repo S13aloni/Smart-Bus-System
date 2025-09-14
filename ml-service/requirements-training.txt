@@ -1,0 +1,21 @@
+# Smart Bus ML Service - Training Requirements
+# Install these packages to train the machine learning models
+
+# Core ML libraries
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Optional: Advanced ML libraries (uncomment if needed)
+# tensorflow>=2.15.0
+# xgboost>=2.0.0
+# optuna>=3.4.0
+# lightgbm>=4.0.0
+
+# Data processing
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Utilities
+tqdm>=4.64.0

@@ -167,10 +167,10 @@ export default function NotificationsPage() {
                 <span>Mark All Read</span>
               </button>
             )}
-            <button className="flex items-center space-x-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-200 transition-all duration-300 hover:scale-105 shadow-sm">
+            {/* <button className="flex items-center space-x-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-200 transition-all duration-300 hover:scale-105 shadow-sm">
               <Download className="h-4 w-4" />
               <span>Export</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
