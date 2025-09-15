@@ -48,6 +48,7 @@ A comprehensive AI-powered bus fleet management system with real-time tracking, 
 ## 🚀 Quick Start
 
 ### Prerequisites
+- Node.js 18+ 
 - Python 3.8+
 - PostgreSQL 12+
 - npm/yarn
@@ -103,6 +104,7 @@ npm run dev
 
 # Terminal 3: Start ML Service
 cd ml-service
+npm run dev:ml
 python -m uvicorn main:app --reload --port 8001
 ```
 
