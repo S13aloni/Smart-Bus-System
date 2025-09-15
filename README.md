@@ -48,7 +48,6 @@ A comprehensive AI-powered bus fleet management system with real-time tracking, 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
 - Python 3.8+
 - PostgreSQL 12+
 - npm/yarn
